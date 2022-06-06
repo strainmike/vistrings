@@ -1,18 +1,14 @@
 from pylabview_helpers.vi import get_vi
 from pylabview import LVheap
 
-import locale
 
-def get_text_from_heap(heap):
+def get_text_from_heap(heap, encoding="cp1252"):
     plaintext = ""
     for i, heap_object in enumerate(heap):
-        scopeInfo = heap_object.getScopeInfo()
         tagName = LVheap.tagEnToName(heap_object.tagEn, heap_object.parent)
         if "text" == tagName:
             try:
-                plaintext += (
-                    heap_object.content.decode(locale.getpreferredencoding()) + "\n"
-                )
+                plaintext += heap_object.content.decode(encoding) + "\n"
             except UnicodeDecodeError:
                 raise RuntimeError("failed decode:" + str(heap_object.content))
         if "ConstValue" == tagName:
@@ -21,8 +17,12 @@ def get_text_from_heap(heap):
             for child in heap_object.parent.childs:
                 childTagName = LVheap.tagEnToName(child.tagEn, child.parent)
                 if childTagName == "ddo":
-                    if LVheap.SL_SYSTEM_ATTRIB_TAGS.SL__class.value in child.attribs and child.attribs[LVheap.SL_SYSTEM_ATTRIB_TAGS.SL__class.value] == LVheap.SL_CLASS_TAGS.SL__stdString:
-                        plaintext += heap_object.content[4:].decode(locale.getpreferredencoding()) + "\n"
+                    if (
+                        LVheap.SL_SYSTEM_ATTRIB_TAGS.SL__class.value in child.attribs
+                        and child.attribs[LVheap.SL_SYSTEM_ATTRIB_TAGS.SL__class.value]
+                        == LVheap.SL_CLASS_TAGS.SL__stdString
+                    ):
+                        plaintext += heap_object.content[4:].decode(encoding) + "\n"
                         break
     return plaintext
 
@@ -41,5 +41,3 @@ def get_vi_plaintext(path):
                 plaintext += get_text_from_heap(section.objects)
 
     return plaintext
-
-
